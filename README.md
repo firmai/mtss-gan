@@ -7,10 +7,16 @@ Design
 
 ![](assets/network.png)
 
----------------
-
+Similarity
+---------------------
 ![](assets/plots.png)
 
+Utility
+---------------------
+![](assets/utility.png)
+
+Code
+---------------------
 Generator:
 ```python
 def generator(inputs,
