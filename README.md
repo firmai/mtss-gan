@@ -1,30 +1,10 @@
 # MTSS-GAN: Multivariate Time Series Simulation Generative Adversarial Learning
 
-The model has been developed on a colaboratory [notebook](https://colab.research.google.com/drive/1UFa3p4TEhK1jAPSj0KMqLpJGsgSBww_b?usp=sharing)
+The model has been developed on a colaboratory [notebook](https://colab.research.google.com/drive/1UFa3p4TEhK1jAPSj0KMqLpJGsgSBww_b?usp=sharing). Here I have added a few code snippets, if there is demand, I can build a package, please let me know in the issues section. 
 
 
-conditions:
+Generator:
 ```python
-def end_cond(X_train):
-  vals = X_train[:,23,4]/X_train[:,0,4]-1
-
-  comb1 = np.where(vals<-.1,0,0)
-  comb2 = np.where((vals>=-.1)&(vals<=-.05),1,0)
-  comb3 = np.where((vals>=-.05)&(vals<=-.0),2,0)
-  comb4 = np.where((vals>0)&(vals<=0.05),3,0)
-  comb5 = np.where((vals>0.05)&(vals<=0.1),4,0)
-  comb6 = np.where(vals>0.1,5,0)
-  cond_all = comb1 + comb2 + comb3+ comb4+ comb5+ comb6
-
-  print(np.unique(cond_all, return_counts=True))
-  arr = np.repeat(cond_all,24, axis=0).reshape(len(cond_all),24)
-  X_train = np.dstack((X_train, arr))
-  return X_train
-```
-
-
-generator:
-```
 def generator(inputs,
               activation='sigmoid',
               labels=None,
@@ -94,6 +74,7 @@ def discriminator(inputs,
     return Model(inputs, outputs, name='discriminator')
 ```
 
+Encoder
 ```python
 
 def build_encoder(inputs, num_labels=6, feature0_dim=6*24):
@@ -115,6 +96,175 @@ def build_encoder(inputs, num_labels=6, feature0_dim=6*24):
     # return both enc0 and enc1
     return enc0, enc1
  ```
+
+Build
+
+```python
+def build_and_train_models():
+    """Load the dataset, build MTSS discriminator,
+    generator, and adversarial models.
+    Call the MTSS train routine.
+    """
+
+    dataX, _, _ = google_data_loading(seq_length)
+    dataX = np.stack(dataX)
+
+    train_n = int(len(dataX)*.70)
+    X = dataX[:,:,:-1]
+    y = dataX[:,-1,-1]
+    x_train, y_train = X[:train_n,:,:], y[:train_n]
+    x_test, y_test = X[train_n:,:,:], y[train_n:]
+
+    # number of labels
+    num_labels = len(np.unique(y_train))
+    # to one-hot vector
+    y_train = to_categorical(y_train)
+    y_test = to_categorical(y_test)
+
+    model_name = "MTSS-GAN"
+    # network parameters
+    batch_size = 64
+    train_steps = 10
+    #train_steps = 2000
+
+    lr = 2e-4
+    decay = 6e-8
+    z_dim = 50 ##this is the real noise input
+    z_shape = (z_dim, )
+    feature0_dim = SHAPE[0]*SHAPE[1]
+    feature0_shape = (feature0_dim, )
+    # [1] uses Adam, but discriminator converges easily with RMSprop
+    optimizer = RMSprop(lr=lr, decay=decay)
+
+    # build discriminator 0 and Q network 0 models
+    input_shape = (feature0_dim, )
+    inputs = Input(shape=input_shape, name='discriminator0_input')
+    dis0 = build_discriminator(inputs, z_dim=z_dim )
+    #Model(Dense(SHAPE[0]*SHAPE[1]), [f0_source, z0_recon], name='dis0')
+
+    # loss fuctions: 1) probability feature0 is real 
+    # (adversarial0 loss)
+    # 2) MSE z0 recon loss (Q0 network loss or entropy0 loss)
+    # Because there are two outputs. 
+
+    loss = ['binary_crossentropy', 'mse']
+    loss_weights = [1.0, 1.0] 
+    dis0.compile(loss=loss,
+                 loss_weights=loss_weights,
+                 optimizer=optimizer,
+                 metrics=['accuracy'])
+    dis0.summary() # feature0 discriminator, z0 estimator
+
+    # build discriminator 1 and Q network 1 models
+
+    input_shape = (x_train.shape[1], x_train.shape[2])
+    inputs = Input(shape=input_shape, name='discriminator1_input')
+    dis1 = discriminator(inputs, num_codes=z_dim)
+
+    # loss fuctions: 1) probability time series arrays is real (adversarial1 loss)
+    # 2) MSE z1 recon loss (Q1 network loss or entropy1 loss)
+    loss = ['binary_crossentropy', 'mse']
+    loss_weights = [1.0, 10.0] 
+    dis1.compile(loss=loss,
+                 loss_weights=loss_weights,
+                 optimizer=optimizer,
+                 metrics=['accuracy'])
+    dis1.summary() # time series array discriminator, z1 estimator 
+
+
+    # build generator models
+    label_shape = (num_labels, )
+    feature0 = Input(shape=feature0_shape, name='feature0_input')
+    labels = Input(shape=label_shape, name='labels')
+    z0 = Input(shape=z_shape, name="z0_input")
+    z1 = Input(shape=z_shape, name="z1_input")
+    latent_codes = (labels, z0, z1, feature0)
+    gen0, gen1 = build_generator(latent_codes)
+    # gen0: classes and noise (labels + z0) to feature0 
+    gen0.summary() # (latent features generator)
+    # gen1: feature0 + z0 to feature1 
+    gen1.summary() # (time series array generator )
+
+    # build encoder models
+    input_shape = SHAPE
+    inputs = Input(shape=input_shape, name='encoder_input')
+    enc0, enc1 = build_encoder((inputs, feature0), num_labels)
+     # Encoder0 or enc0: data to feature0  
+    enc0.summary() # time series array to feature0 encoder
+     # Encoder1 or enc1: feature0 to class labels
+    enc1.summary() # feature0 to labels encoder (classifier)
+    encoder = Model(inputs, enc1(enc0(inputs)))
+    encoder.summary() # time series array to labels encoder (classifier)
+
+    data = (x_train, y_train), (x_test, y_test)
+    print(x_train.shape)
+    print(y_train.shape)
+
+    # this process would train enco, enc1, and encoder
+    train_encoder(encoder, data, model_name=model_name)
+
+
+    # build adversarial0 model = 
+    # generator0 + discriminator0 + encoder1
+    # encoder0 weights frozen
+    enc1.trainable = False
+    # discriminator0 weights frozen
+    dis0.trainable = False
+    gen0_inputs = [labels, z0]
+    gen0_outputs = gen0(gen0_inputs)
+    adv0_outputs = dis0(gen0_outputs) + [enc1(gen0_outputs)]
+    # labels + z0 to prob labels are real + z0 recon + feature1 recon
+    adv0 = Model(gen0_inputs, adv0_outputs, name="adv0")
+    # loss functions: 1) prob labels are real (adversarial1 loss)
+    # 2) Q network 0 loss (entropy0 loss)
+    # 3) conditional0 loss (classifier error)
+    loss_weights = [1.0, 1.0, 1.0] 
+    loss = ['binary_crossentropy', 
+            'mse',
+            'categorical_crossentropy']
+    adv0.compile(loss=loss,
+                 loss_weights=loss_weights,
+                 optimizer=optimizer,
+                 metrics=['accuracy'])
+    adv0.summary()
+
+    # build adversarial1 model =
+    # generator1 + discriminator1 + encoder0
+    optimizer = RMSprop(lr=lr*0.5, decay=decay*0.5)
+    # encoder1 weights frozen
+    enc0.trainable = False
+    # discriminator1 weights frozen
+    dis1.trainable = False
+    gen1_inputs = [feature0, z1]
+    gen1_outputs = gen1(gen1_inputs)
+    print(gen1_inputs)
+    print(gen1_outputs)
+    adv1_outputs = dis1(gen1_outputs) + [enc0(gen1_outputs)]
+    # feature1 + z1 to prob feature1 is 
+    # real + z1 recon + feature1/time series array recon
+    adv1 = Model(gen1_inputs, adv1_outputs, name="adv1")
+    # loss functions: 1) prob feature1 is real (adversarial0 loss)
+    # 2) Q network 1 loss (entropy1 loss)
+    # 3) conditional1 loss
+    loss = ['binary_crossentropy', 'mse', 'mse']
+    loss_weights = [1.0, 10.0, 1.0] 
+    adv1.compile(loss=loss,
+                 loss_weights=loss_weights,
+                 optimizer=optimizer,
+                 metrics=['accuracy'])
+    adv1.summary()
+
+    
+
+    # train discriminator and adversarial networks
+    models = (enc0, enc1, gen0, gen1, dis0, dis1, adv0, adv1)
+    params = (batch_size, train_steps, num_labels, z_dim, model_name)
+    gen0, gen1 = train(models, data, params)
+
+
+    return gen0, gen1
+```
+
 
 Training
 ```python
