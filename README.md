@@ -3,7 +3,9 @@
 The model has been developed on a colaboratory [notebook](https://colab.research.google.com/drive/1UFa3p4TEhK1jAPSj0KMqLpJGsgSBww_b?usp=sharing). Here I have added a few code snippets, if there is demand, I can build a package, please let me know in the issues tab. For some additional information, feel free to consult the [paper](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3616557). 
 
 ![](assets/network.png)
-Similarity Plots
+
+---------------
+
 ![](assets/plots.png)
 
 Generator:
