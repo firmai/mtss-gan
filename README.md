@@ -1,6 +1,6 @@
 # MTSS-GAN: Multivariate Time Series Simulation Generative Adversarial Learning
 
-The model has been developed on a colaboratory [notebook](https://colab.research.google.com/drive/1UFa3p4TEhK1jAPSj0KMqLpJGsgSBww_b?usp=sharing). Here I have added a few code snippets, if there is demand, I can build a package, please let me know in the issues section. 
+The model has been developed on a colaboratory [notebook](https://colab.research.google.com/drive/1UFa3p4TEhK1jAPSj0KMqLpJGsgSBww_b?usp=sharing). Here I have added a few code snippets, if there is demand, I can build a package, please let me know in the issues tab. 
 
 ![](assets/network.png)
 
