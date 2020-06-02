@@ -418,3 +418,4 @@ def train(models, data, params):
     return  gen0, gen1 
     
 ```
+![](assets/plots.png)
