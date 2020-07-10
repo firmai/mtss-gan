@@ -1,5 +1,7 @@
 # MTSS-GAN: Multivariate Time Series Simulation Generative Adversarial Networks
 
+The algorithm is unstable. The metrics section has two errors that I have to fix. When I get time I will get around to it.
+
 The model has been developed on a colaboratory [notebook](https://colab.research.google.com/drive/1UFa3p4TEhK1jAPSj0KMqLpJGsgSBww_b?usp=sharing). Here I have added a few code snippets, if there is demand, I can build a package, please let me know in the issues tab. For some additional information, feel free to consult the [paper](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3616557). 
 
 MTSS-GAN is a new generative adversarial network (GAN) developed to simulate diverse multivariate time series (MTS) data with finance applications in mind. The purpose of this synthesiser is two-fold, we both want to generate data that accurately represents the original data, while also having the flexibility to generate data with novel and unique relationships that could help with model testing and robustness checks. The method is inspired by stacked GANs originally designed for image generation. Stacked GANs have produced some of the best quality images, for that reason MTSS-GAN is expected to be a leading contender in multivariate time series generation. 
