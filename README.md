@@ -1,6 +1,6 @@
 # MTSS-GAN: Multivariate Time Series Simulation Generative Adversarial Networks
 
-The algorithm, due to its nature is unstable. My hope is that future iterations will bring more stability to generative models. The metrics section has two errors that I have to come around to. Please experiment with the code in the colab below and give me your feedback in the issues tab. I will read it to improve a future version of this model.
+The algorithm, due to its nature is somewhat unstable. My hope is that future iterations will bring more stability to generation process. The metrics section has two errors that I have to come around to. Please experiment with the code in the colab below and give me your feedback in the issues tab. I will read it to improve a future version of this model.
 
 The model has been developed on a colaboratory [notebook](https://colab.research.google.com/drive/1UFa3p4TEhK1jAPSj0KMqLpJGsgSBww_b?usp=sharing). Here I have added a few code snippets, if there is demand, I can build a package, please let me know in the issues tab. For some additional information, feel free to consult the [paper](https://papers.ssrn.com/sol3/papers.cfm?abstract_id=3616557). 
 
